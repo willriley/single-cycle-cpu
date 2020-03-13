@@ -8,6 +8,8 @@ always @* begin
 	5'd3: instr = 32'h0080_0213; // addi x4 x0 8
 	5'd4: instr = 32'h0020_82b3; // add  x5 x1 x2
 	5'd5: instr = 32'h0041_8333; // add  x6 x3 x4
+	5'd6: instr = 32'h0050_a023; // sw x5 0(x1)
+	5'd7: instr = 32'h0061_2223; // sw x6 4(x2)
 	default: instr = 32'hffff_ffff; // halt
 	endcase
 end
