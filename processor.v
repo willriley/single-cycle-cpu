@@ -40,14 +40,14 @@ wire mem_wrenable;
 reg [31:0] alu_src;
 wire [31:0] mem_res;
 
-wire clk;
-pll pll(CLOCK_50, clk);
+wire clock;
+pll pll(CLOCK_50, clock);
 
 wire mem_clk;
-assign mem_clk = ~clk;
+assign mem_clk = ~clock;
 
 // connect to reg file
-regfile rf(.clk(CLOCK_50), .read_reg1(rd1), .read_reg2(rd2),
+regfile rf(.clk(clock), .read_reg1(rd1), .read_reg2(rd2),
    		  .write_reg(w), .write_data(wd), .write_enable(reg_wrenable),
 			  .read_data1(rr1), .read_data2(rr2));
 				
@@ -58,7 +58,7 @@ instruction_rom rom(pc, instr);
 // write enabled only on stores
 ram ram(.address(alu_res[4:0]), .clock(mem_clk), .data(rr2), .wren(mem_wrenable), .q(mem_res));
 
-always @(posedge CLOCK_50) begin
+always @(posedge clock) begin
 	if (pc < 5'd7) pc <= pc + 1'b1;
 	else pc <= pc;
 end
