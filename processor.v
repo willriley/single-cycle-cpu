@@ -48,7 +48,6 @@ pll pll(CLOCK_50, clock);
 
 // 180 phase shift for memory clock
 wire mem_clk;
-// assign mem_clk = ~CLOCK_50;
 assign mem_clk = ~clock;
 
 // connect to reg file
@@ -60,7 +59,7 @@ regfile rf(.clk(clock), .read_reg1(rr1), .read_reg2(rr2),
 instruction_rom rom(pc, instr);
 
 // instantiate alu
-// if load or store, use add; else, use combo of f3 and f7]
+// if load or store, use add; else, use combo of f3 and f7
 // TODO: make switch on instr-type; have separate block that assigns all vals based
 // on instr-type flag
 
@@ -79,10 +78,6 @@ alu alu(.opc(alu_op), .op1(rd1),
 // write enabled only on stores
 wire [7:0] mem_addr;
 assign mem_addr = alu_res[9:2];
-
-//wire [31:0] mem_data;
-//assign mem_data = {rd2[7:0], rd2[15:8], rd2[23:16], rd2[31:24]}; // convert to little endian
-
 ram ram(.address(mem_addr), .clock(mem_clk), .data(rd2), .wren(mem_wrenable), .q(mem_res));
 
 always @(posedge clock) begin
