@@ -1,56 +1,58 @@
-module processor(input CLOCK_50,
-					  output reg [4:0] pc,
-					  output [31:0] instr,
-					  output [4:0] rr1,
-					  output [4:0] rr2,
-					  output [31:0] rd1,
-					  output [31:0] rd2,
-					  output [4:0] w,
-					  output [31:0] alu_res,
-					  output [31:0] wd,
-					  output reg_wrenable,
-					  output mem_wrenable,
-					  output reg [31:0] alu_src,
-					  output reg [4:0] opc,
-					  output [31:0] mem_res,
-					  output halt);
+module processor(input CLOCK_50);
+//					  output reg [4:0] pc,
+//					  output [31:0] instr,
+//					  output [4:0] rr1,
+//					  output [4:0] rr2,
+//					  output [31:0] rd1,
+//					  output [31:0] rd2,
+//					  output [4:0] w,
+//					  output [31:0] alu_res,
+//					  output [31:0] wd,
+//					  output reg_wrenable,
+//					  output mem_wrenable,
+//					  output reg [31:0] alu_src,
+//					  output reg [4:0] alu_op,
+//					  output [7:0] mem_addr,
+//					  output [31:0] mem_res,
+//					  output halt);
 
 
 // TODO: fix control unit
 // TODO: clock on real board
 
-//reg [4:0] pc; // program counter
-//wire [31:0] instr; // current instruction
-//
-//wire [4:0] rr1; // read reg 1
-//wire [4:0] rr2; // read reg 2
-//wire reg_wrenable; // write enable
-//wire [4:0] w; // write reg
-//wire [31:0] wd; // write data
-//wire [31:0] rd1; // read data 1
-//wire [31:0] rd2; // read data 2
+reg [4:0] pc; // program counter
+wire [31:0] instr; // current instruction
+
+wire [4:0] rr1; // read reg 1
+wire [4:0] rr2; // read reg 2
+wire reg_wrenable; // write enable
+wire [4:0] w; // write reg
+wire [31:0] wd; // write data
+wire [31:0] rd1; // read data 1
+wire [31:0] rd2; // read data 2
 
 initial begin
 	pc = 0;
 end
 
-//reg [31:0] alu_src;
-//wire [31:0] alu_res;
-//wire mem_wrenable;
-//wire [31:0] mem_res;
-//
-//wire halt;
+reg [31:0] alu_src;
+wire [31:0] alu_res;
+wire mem_wrenable;
+wire [31:0] mem_res;
+
+wire halt;
 assign halt = instr[6:0] == 7'b1111111;
 
-//wire clock;
-//pll pll(CLOCK_50, clock);
+wire clock;
+pll pll(CLOCK_50, clock);
 
 // 180 phase shift for memory clock
-// wire mem_clk;
-assign mem_clk = ~CLOCK_50;
+wire mem_clk;
+// assign mem_clk = ~CLOCK_50;
+assign mem_clk = ~clock;
 
 // connect to reg file
-regfile rf(.clk(CLOCK_50), .read_reg1(rr1), .read_reg2(rr2),
+regfile rf(.clk(clock), .read_reg1(rr1), .read_reg2(rr2),
    		  .write_reg(w), .write_data(wd), .write_enable(reg_wrenable),
 			  .read_data1(rd1), .read_data2(rd2));
 				
@@ -61,22 +63,29 @@ instruction_rom rom(pc, instr);
 // if load or store, use add; else, use combo of f3 and f7]
 // TODO: make switch on instr-type; have separate block that assigns all vals based
 // on instr-type flag
+
+reg [4:0] alu_op;
 always @* begin
 	case (instr[6:0])
-	7'b0010011: opc = {2'd0, instr[14:12]};
-	7'b0110011: opc = {instr[30], instr[25], instr[14:12]};
-	default: opc = 5'd0;
+	7'b0010011: alu_op = {2'd0, instr[14:12]};
+	7'b0110011: alu_op = {instr[30], instr[25], instr[14:12]};
+	default: alu_op = 5'd0;
 	endcase
 end
-alu alu(.opc(opc), .op1(rd1),
+alu alu(.opc(alu_op), .op1(rd1),
 		  .op2(alu_src), .res(alu_res));
 
 // instantiate data memory
 // write enabled only on stores
-fakeram ram(.address(alu_res[4:0]), .clock(mem_clk), .data(rd2), .wren(mem_wrenable), .q(mem_res));
+wire [7:0] mem_addr;
+assign mem_addr = alu_res[9:2];
 
-// always @(posedge clock) begin
-always @(posedge CLOCK_50) begin
+//wire [31:0] mem_data;
+//assign mem_data = {rd2[7:0], rd2[15:8], rd2[23:16], rd2[31:24]}; // convert to little endian
+
+ram ram(.address(mem_addr), .clock(mem_clk), .data(rd2), .wren(mem_wrenable), .q(mem_res));
+
+always @(posedge clock) begin
 	pc <= halt ? pc : pc + 1'b1;
 end
 
