@@ -9,6 +9,7 @@ always @* begin
 	5'd4: instr = 32'hffff_ffff; // halt
 	5'd5: instr = 32'h04500093;  // addi x1, x0, 69
 	5'd6: instr = 32'h00102023;  // sw x1, 0(x0)
+//	5'd7: instr = 32'h00002183;  // lw x3, 0(x0)
 	default: instr = 32'hffff_ffff; // halt
 	endcase
 end

@@ -1,19 +1,11 @@
 module processor(input CLOCK_50);
 //					  output reg [4:0] pc,
-//					  output [31:0] instr,
 //					  output [4:0] rr1,
 //					  output [4:0] rr2,
 //					  output [31:0] rd1,
 //					  output [31:0] rd2,
-//					  output [4:0] w,
 //					  output [31:0] alu_res,
 //					  output reg [31:0] wd,
-//					  output reg reg_wrenable,
-//					  output reg mem_wrenable,
-//					  output reg [31:0] alu_src,
-//					  output reg [4:0] alu_op,
-//					  output [7:0] mem_addr,
-//					  output [31:0] mem_res,
 //					  output reg halt);
 
 // TODO: add instruction ROM; create control module; increase clock speed
@@ -34,7 +26,7 @@ initial begin
 	halt = 0;
 end
 
-always @(posedge clock) begin
+always @(posedge CLOCK_50) begin
 	if (halt) pc <= pc;
 	else begin
 		// increment pc by 1 if instr isn't a branch
@@ -64,15 +56,15 @@ wire [31:0] alu_res;
 reg mem_wrenable;
 wire [31:0] mem_res;
 
-wire clock;
-pll pll(CLOCK_50, clock);
+// wire clock;
+// pll pll(CLOCK_50, clock);
 
 // 180 phase shift for memory clock
 wire mem_clk;
-assign mem_clk = ~clock;
+assign mem_clk = ~CLOCK_50;
 
 // connect to reg file
-regfile rf(.clk(clock), .read_reg1(rr1), .read_reg2(rr2),
+regfile rf(.clk(CLOCK_50), .read_reg1(rr1), .read_reg2(rr2),
    		  .write_reg(w), .write_data(wd), .write_enable(reg_wrenable),
 			  .read_data1(rd1), .read_data2(rd2));
 				
@@ -80,7 +72,7 @@ regfile rf(.clk(clock), .read_reg1(rr1), .read_reg2(rr2),
 instruction_rom rom(pc, instr);
 
 // immediate generator
-reg [31:0] imm; 
+	reg [31:0] imm; 
 always @* begin
 	case (instr[6:0])
 	STORE: imm = {instr[31:25], instr[11:7]};
