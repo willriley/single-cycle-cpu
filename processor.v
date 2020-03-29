@@ -1,25 +1,27 @@
-module processor(input CLOCK_50);
-//					  output reg [4:0] pc,
-//					  output [4:0] rr1,
-//					  output [4:0] rr2,
-//					  output [31:0] rd1,
-//					  output [31:0] rd2,
-//					  output [31:0] alu_res,
-//					  output reg [31:0] wd,
-//					  output reg halt);
+module processor(input CLOCK_50,
+					  output reg [4:0] pc,
+					  output [4:0] rr1,
+					  output [4:0] rr2,
+					  output [31:0] rd1,
+					  output [31:0] rd2,
+					  output [31:0] alu_res,
+					  output reg [31:0] wd,
+					  output reg halt);
 
 // TODO: add instruction ROM; create control module; increase clock speed
 
-parameter HALT = 7'b1111111;
-parameter LOAD = 7'b0000011;
+parameter HALT  = 7'b1111111;
+parameter LOAD  = 7'b0000011;
 parameter STORE = 7'b0100011;
 parameter ITYPE = 7'b0010011;
 parameter BTYPE = 7'b1100011;
 parameter RTYPE = 7'b0010011;
+parameter JAL   = 7'b1101111;
+parameter JALR  = 7'b1100111;
 
-reg [4:0] pc; // program counter
+// reg [4:0] pc; // program counter
 wire [31:0] instr; // current instruction
-reg halt;
+// reg halt;
 
 initial begin
 	pc = 0;
@@ -29,28 +31,28 @@ end
 always @(posedge CLOCK_50) begin
 	if (halt) pc <= pc;
 	else begin
-		// increment pc by 1 if instr isn't a branch
-		// and the condition isn't met
-		if (instr[6:0] != BTYPE || !instr[12] && alu_res || instr[12] && !alu_res) begin
-			pc <= pc + 1'b1;
-		end
-		else pc <= pc + imm;
+		case (instr[6:0])
+		BTYPE: pc <= ((!instr[12] && !alu_res) || (instr[12] && alu_res)) ? pc + imm : pc + 1'b1;
+		JAL: pc <= pc + imm;
+		JALR: pc <= alu_res;
+		default: pc <= pc + 1'b1;
+		endcase
 	end
 end
 
 // register file ports
-wire [4:0] rr1; // read reg 1
-wire [4:0] rr2; // read reg 2
+//wire [4:0] rr1; // read reg 1
+//wire [4:0] rr2; // read reg 2
 reg reg_wrenable; // write enable
 wire [4:0] w; // write reg
-reg [31:0] wd; // write data
-wire [31:0] rd1; // read data 1
-wire [31:0] rd2; // read data 2
+//reg [31:0] wd; // write data
+//wire [31:0] rd1; // read data 1
+//wire [31:0] rd2; // read data 2
 
 // alu ports
 reg [4:0] alu_op;
 reg [31:0] alu_src;
-wire [31:0] alu_res;
+//wire [31:0] alu_res;
 
 // data memory ports
 reg mem_wrenable;
@@ -70,15 +72,16 @@ regfile rf(.clk(CLOCK_50), .read_reg1(rr1), .read_reg2(rr2),
 				
 // instantiate instruction memory
 instruction_rom rom(pc, instr);
+// rom instruction_rom(pc, CLOCK_50, instr);
 
 // immediate generator
-	reg [31:0] imm; 
+reg [31:0] imm; 
 always @* begin
 	case (instr[6:0])
-	STORE: imm = {instr[31:25], instr[11:7]};
-	LOAD, ITYPE: imm = instr[31:20];
-	BTYPE: imm = {instr[31], instr[7], instr[30:25], instr[11:9]};
-	default: imm = 0;
+	STORE: imm = {{20{instr[31]}},instr[31:25], instr[11:7]};
+	BTYPE: imm = {{22{instr[31]}}, instr[7], instr[30:25], instr[11:9]};
+	JAL: imm = {{14{instr[31]}}, instr[19:12], instr[20], instr[30:22]};
+	default: imm = {{20{instr[31]}}, instr[31:20]}; // itype, load, jalr
 	endcase	
 end
 
@@ -109,6 +112,15 @@ always @* begin
 	end
 	BTYPE: begin // b-type
 		alu_op = 5'b10000; // subtraction
+	end
+	JAL: begin
+		reg_wrenable = 1'b1;
+		wd = pc + 1'b1; // save pc + 1 in return address
+	end
+	JALR: begin
+		alu_src = imm;
+		reg_wrenable = 1'b1;
+		wd = pc + 1'b1; // save pc + 1 in return address
 	end
 	default: begin // r-type
 		alu_op = {instr[30], instr[25], instr[14:12]};

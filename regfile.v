@@ -10,6 +10,7 @@ module regfile(input clk,
 reg [31:0] regs[0:31]; // 32x32 bit array
 initial begin
 	regs[0] = 0;
+	regs[2] = 255; // set sp at top of address space
 end
 
 // reading is combinational
@@ -18,7 +19,7 @@ assign read_data2 = regs[read_reg2];
 	
 // writing is sequential	
 always @(posedge clk) begin
-	if (write_enable) regs[write_reg] <= write_data;
+	if (write_enable && write_reg != 5'd0) regs[write_reg] <= write_data;
 end
 					
 endmodule
