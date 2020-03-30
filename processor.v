@@ -1,12 +1,12 @@
-module processor(input CLOCK_50,
-					  output reg [4:0] pc,
-					  output [4:0] rr1,
-					  output [4:0] rr2,
-					  output [31:0] rd1,
-					  output [31:0] rd2,
-					  output [31:0] alu_res,
-					  output reg [31:0] wd,
-					  output reg halt);
+module processor(input CLOCK_50);
+//					  output reg [4:0] pc,
+//					  output [4:0] rr1,
+//					  output [4:0] rr2,
+//					  output [31:0] rd1,
+//					  output [31:0] rd2,
+//					  output [31:0] alu_res,
+//					  output reg [31:0] wd,
+//					  output reg halt);
 
 // TODO: add instruction ROM; create control module; increase clock speed
 
@@ -19,9 +19,9 @@ parameter RTYPE = 7'b0010011;
 parameter JAL   = 7'b1101111;
 parameter JALR  = 7'b1100111;
 
-// reg [4:0] pc; // program counter
+reg [4:0] pc; // program counter
 wire [31:0] instr; // current instruction
-// reg halt;
+reg halt;
 
 initial begin
 	pc = 0;
@@ -41,25 +41,25 @@ always @(posedge CLOCK_50) begin
 end
 
 // register file ports
-//wire [4:0] rr1; // read reg 1
-//wire [4:0] rr2; // read reg 2
+wire [4:0] rr1; // read reg 1
+wire [4:0] rr2; // read reg 2
 reg reg_wrenable; // write enable
 wire [4:0] w; // write reg
-//reg [31:0] wd; // write data
-//wire [31:0] rd1; // read data 1
-//wire [31:0] rd2; // read data 2
+reg [31:0] wd; // write data
+wire [31:0] rd1; // read data 1
+wire [31:0] rd2; // read data 2
 
 // alu ports
 reg [4:0] alu_op;
 reg [31:0] alu_src;
-//wire [31:0] alu_res;
+wire [31:0] alu_res;
 
 // data memory ports
 reg mem_wrenable;
 wire [31:0] mem_res;
 
-// wire clock;
-// pll pll(CLOCK_50, clock);
+wire clock;
+pll pll(CLOCK_50, clock);
 
 // 180 phase shift for memory clock
 wire mem_clk;

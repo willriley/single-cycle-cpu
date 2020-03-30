@@ -2,7 +2,7 @@ module instruction_rom(input [4:0] addr, output reg [31:0] instr);
 
 always @* begin
 	case (addr)
-	5'd0: instr = 32'h00200513;  // change to fact(2)
+	5'd0: instr = 32'h00600513;
 	5'd1: instr = 32'h00c000ef;
 	5'd2: instr = 32'h00a02023;
 	5'd3: instr = 32'hffffffff; 
